@@ -27,29 +27,29 @@ def main():
     normalizedDf = pd.DataFrame(data = x, columns = features)
     normalizedDf = pd.concat([normalizedDf, df[[target]]], axis = 1)
 
-    # PCA projection
-    pca = PCA()    
-    principalComponents = pca.fit_transform(x)
-    print("Explained variance per component:")
-    print(pca.explained_variance_ratio_.tolist())
+    # # PCA projection
+    # pca = PCA()    
+    # principalComponents = pca.fit_transform(x)
+    # print("Explained variance per component:")
+    # print(pca.explained_variance_ratio_.tolist())
 
-    principalDf = pd.DataFrame(data = principalComponents[:,0:2], 
-                               columns = ['principal component 1', 
-                                          'principal component 2'
-                                          ])
+    # principalDf = pd.DataFrame(data = principalComponents[:,0:2], 
+    #                            columns = ['principal component 1', 
+    #                                       'principal component 2'
+    #                                       ])
 
-    sns.scatterplot(data = principalDf, x = 'principal component 1', y = 'principal component 2', hue = 'Resultado')
+    #sns.scatterplot(data = df, x = 'PressaoArterialRepouso', y = 'FreqCardioMax', hue = 'Resultado')
+    
+
+    X_train, X_test, y_train, y_test = train_test_split(df[['PressaoArterialRepouso', 'FreqCardioMax']], df[['Resultado']], test_size=0.33, random_state=0)
+    X_train_norm = preprocessing.normalize(X_train)
+    X_test_norm = preprocessing.normalize(X_test)
+
+    kmeans = KMeans(n_clusters = 2, random_state = 0, n_init='auto')
+    kmeans.fit(X_train_norm)
+
+    sns.scatterplot(data = X_train, x = 'PressaoArterialRepouso', y = 'FreqCardioMax', hue = kmeans.labels_)
     plt.show();
-
-    # X_train, X_test, y_train, y_test = train_test_split(df[['PressaoArterialRepouso', 'FreqCardioMax']], df[['Resultado']], test_size=0.33, random_state=0)
-    # X_train_norm = preprocessing.normalize(X_train)
-    # X_test_norm = preprocessing.normalize(X_test)
-
-    # kmeans = KMeans(n_clusters = 2, random_state = 0, n_init='auto')
-    # kmeans.fit(X_train_norm)
-
-    # #sns.scatterplot(data = X_train, x = 'PressaoArterialRepouso', y = 'FreqCardioMax', hue = kmeans.labels_)
-
     # #sns.boxplot(x = kmeans.labels_, y = y_train['Resultado'], palette="Set1")
     
     # #plt.show()
