@@ -1,16 +1,13 @@
-# Initial imports
 import itertools
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import f1_score
-from sklearn.metrics import confusion_matrix
-from sklearn import datasets
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from collections import Counter
+from sklearn import svm
 
 # Calculate distance between two points
 def minkowski_distance(a, b, p=1):    
@@ -94,15 +91,18 @@ def plot_confusion_matrix(cm, classes,
 
 
 def main():
-    # Load iris data and store in dataframe
-    iris = datasets.load_iris()
-    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
-    df['target'] = iris.target
-    df.head()
+
+    names = ['Idade', 'Sexo', 'TipoDorPeito','PressaoArterialRepouso', 'Colesterol', 'Glicemia', 'ResEletroCardio', 'FreqCardioMax', 'AnginaInduzExerc', 'PicoAnterior', 'Declive', 'VasosPrincAfetados', 'TesteEstresse', 'Resultado']
+
+    input_file = '0-Datasets/HeartAttackModa.csv'
+
+    df = pd.read_csv(input_file, names=names, header=None)  # Correção para ler corretamente o arquivo CSV sem cabeçalho
+
+    df['target'] = df['Resultado']  # Atribui corretamente a coluna alvo
 
     # Separate X and y data
     X = df.drop('target', axis=1)
-    y = df.target   
+    y = df['target']   
     print("Total samples: {}".format(X.shape[0]))
 
     # Split the data - 75% train, 25% test
@@ -122,29 +122,36 @@ def main():
     # Get test accuracy score
     accuracy = accuracy_score(y_test, y_hat_test)*100
     f1 = f1_score(y_test, y_hat_test, average='macro')
-    print("Acurracy K-NN from scratch: {:.2f}%".format(accuracy))
+    print("Accuracy K-NN from scratch: {:.2f}%".format(accuracy))
     print("F1 Score K-NN from scratch: {:.2f}%".format(f1))
 
     # Get test confusion matrix
     cm = confusion_matrix(y_test, y_hat_test)        
-    plot_confusion_matrix(cm, iris.target_names, False, "Confusion Matrix - K-NN")      
-    plot_confusion_matrix(cm, iris.target_names, True, "Confusion Matrix - K-NN normalized")  
+    plot_confusion_matrix(cm, np.unique(y), False, "Confusion Matrix - K-NN from scratch")      
+    plot_confusion_matrix(cm, np.unique(y), True, "Confusion Matrix - K-NN from scratch normalized")  
 
     # STEP 2 - TESTS USING knn classifier from sk-learn
     knn = KNeighborsClassifier(n_neighbors=5)
     knn.fit(X_train, y_train)
     y_hat_test = knn.predict(X_test)
 
-     # Get test accuracy score
+    clf = svm.SVC(kernel='linear', C=1, random_state=42)
+    scores = cross_val_score(clf, X, y, cv=5)
+
+    print("Cross-validation scores:", scores)
+    print("Mean cross-validation score: {:.2f}".format(scores.mean()))
+
+    # Get test accuracy score
     accuracy = accuracy_score(y_test, y_hat_test)*100
     f1 = f1_score(y_test, y_hat_test,average='macro')
-    print("Acurracy K-NN from sk-learn: {:.2f}%".format(accuracy))
+    print("Accuracy K-NN from sk-learn: {:.2f}%".format(accuracy))
     print("F1 Score K-NN from sk-learn: {:.2f}%".format(f1))
 
     # Get test confusion matrix    
     cm = confusion_matrix(y_test, y_hat_test)        
-    plot_confusion_matrix(cm, iris.target_names, False, "Confusion Matrix - K-NN sklearn")      
-    plot_confusion_matrix(cm, iris.target_names, True, "Confusion Matrix - K-NN sklearn normalized" )  
+    plot_confusion_matrix(cm, np.unique(y), False, "Confusion Matrix - K-NN sklearn")      
+    plot_confusion_matrix(cm, np.unique(y), True, "Confusion Matrix - K-NN sklearn normalized")  
+
     plt.show()
 
 

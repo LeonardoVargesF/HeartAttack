@@ -10,14 +10,15 @@ def distancia_euclideana(vet1, vet2):
 
 # função retorna k vizinhos mais próximos
 def retorna_vizinhos(base_treinamento, amostra_teste, num_vizinhos):
-    distancias = list()
+    distancias = []
     for linha_tre in base_treinamento:
         dist = distancia_euclideana(amostra_teste, linha_tre)
         distancias.append((linha_tre, dist)) # erro
     # ordenação das distancias de forma crescente
     distancias.sort(key=lambda tup: tup[1]) # erro
+    print(distancias)
     # retorna os vizinhos mais proximos
-    vizinhos = list()
+    vizinhos = []
     for i in range(num_vizinhos):
         vizinhos.append(distancias[i][0]) # erro
     return vizinhos
@@ -26,6 +27,7 @@ def retorna_vizinhos(base_treinamento, amostra_teste, num_vizinhos):
 def classifica(base_treinamento, amostra_teste, num_vizinhos):
     vizinhos = retorna_vizinhos(base_treinamento, amostra_teste, num_vizinhos)
     rotulos = [v[-1] for v in vizinhos]
+    print(rotulos)
     predicao = max(set(rotulos), key=rotulos.count)
     return predicao
 
@@ -34,3 +36,18 @@ amostra = [0, 0, 0]
 predicao = classifica(dataset, amostra, 3)
 print('Resultado da clasificação')
 print('Esperado %d\nPredição %d' % (amostra[-1], predicao))
+
+def main():
+    print('Knn')
+    treinamento = [[1,2,0],
+                   [2,3,0],
+                   [2,1,0],
+                   [2,2,1],
+                   [6,7,1],
+                   [7,7,1]]
+    teste = [1,2,0]
+    predicao = classifica(treinamento, teste, 3)
+    print('Resultado da classificação')
+    print('Rótulo esperado %i\nRótulo predição: %i\n' % (teste[-1],predicao))
+if __name__ == '__main__':
+    main()
