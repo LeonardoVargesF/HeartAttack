@@ -10,6 +10,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import confusion_matrix
 from sklearn import datasets
 from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -59,19 +60,24 @@ def load_dataset(dataset='cancer'):
         names = cancer.target_names
         df = pd.DataFrame(data=cancer.data, columns=cancer.feature_names)
         df['target'] = cancer.target
-    
+
     print(df.head())
     return names, df
 
 
 def main():
-    #load dataset
-    target_names, df = load_dataset('iris')
 
+    input_file = '0-Datasets/HeartAttackMedia.csv'
+    names = ['Idade', 'Sexo', 'TipoDorPeito','PressaoArterialRepouso', 'Colesterol', 'Glicemia', 'ResEletroCardio', 'FreqCardioMax', 'AnginaInduzExerc', 'PicoAnterior', 'Declive', 'VasosPrincAfetados', 'TesteEstresse', 'Resultado']
+    target = 'Resultado'
+    df = pd.read_csv(input_file, names=names)
+    df['target'] = target
+    
     # Separate X and y data
-    X = df.drop('target', axis=1)
-    y = df.target   
+    X = df[names]
+    y = df[target]   
     print("Total samples: {}".format(X.shape[0]))
+
 
     # Split the data - 75% train, 25% test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=1)
@@ -84,7 +90,7 @@ def main():
     X_test = scaler.transform(X_test)
 
     # TESTS USING SVM classifier from sk-learn    
-    svm = SVC(kernel='poly') # poly, rbf, linear
+    svm = SVC(kernel='poly', C = 1) # poly, rbf, linear
     # training using train dataset
     svm.fit(X_train, y_train)
     # get support vectors
@@ -97,6 +103,28 @@ def main():
     # predict using test dataset
     y_hat_test = svm.predict(X_test)
 
+
+
+
+    # TESTS USING SVM classifier from sk-learn
+    parameters = {'kernel':('linear', 'rbf', 'poly'), 'C':[1, 10]}
+    svm = SVC() # poly, rbf, linear
+    clf = GridSearchCV(svm, parameters)   
+    # training using train dataset
+    clf.fit(X_train, y_train)
+    # get support vectors
+    #print(svm.support_vectors_)
+    # get indices of support vectors
+    # print(svm.support_)
+    # # get number of support vectors for each class
+    # print("Qtd Support vectors: ")
+    # print(svm.n_support_)
+    # # predict using test dataset
+    y_hat_test = clf.predict(X_test)
+    
+    #https://andersonuyekita.github.io/notebooks/blog/2019/03/21/como-usar-o-gridsearchcv/
+
+
      # Get test accuracy score
     accuracy = accuracy_score(y_test, y_hat_test)*100
     f1 = f1_score(y_test, y_hat_test,average='macro')
@@ -104,11 +132,12 @@ def main():
     print("F1 Score SVM from sk-learn: {:.2f}%".format(f1))
 
     # Get test confusion matrix    
-    cm = confusion_matrix(y_test, y_hat_test)        
-    plot_confusion_matrix(cm, target_names, False, "Confusion Matrix - SVM sklearn")      
-    plot_confusion_matrix(cm, target_names, True, "Confusion Matrix - SVM sklearn normalized" )  
+    cm = confusion_matrix(y_test, y_hat_test)    
+    classes = np.unique(y)    
+    plot_confusion_matrix(cm, classes, False, "Confusion Matrix - SVM sklearn")      
+    plot_confusion_matrix(cm, classes, True, "Confusion Matrix - SVM sklearn normalized" )  
     plt.show()
-
+    print(sorted(clf.cv_results_.keys()))
 
 if __name__ == "__main__":
     main()
