@@ -29,7 +29,7 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Criar e treinar o classificador
-clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(20, 5), random_state=35)
+clf = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(20, 5))
 clf.fit(X_train_scaled, y_train)
 
 # Fazer previsões e avaliar o modelo
