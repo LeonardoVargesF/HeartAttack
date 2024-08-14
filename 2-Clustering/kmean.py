@@ -101,10 +101,10 @@ def main():
     plt.grid(True)
     
     # Aplicar o método do cotovelo para encontrar o número ideal de clusters
-    elbow_method(projected, max_k=10)
+    elbow_method(projected, max_k=20)
     
     # Aplicar o KMeans do zero
-    k = 6
+    k = 5
     labels_scratch = KMeans_scratch(projected, k, 5)
     
     # Visualizar os resultados do KMeans do zero
