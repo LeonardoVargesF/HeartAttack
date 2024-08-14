@@ -1,81 +1,125 @@
+import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.metrics import silhouette_score
-from sklearn import preprocessing
-from sklearn.cluster import KMeans
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from scipy.spatial.distance import cdist
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+
+# Definindo a função KMeans do zero
+def KMeans_scratch(x, k, no_of_iterations):
+    idx = np.random.choice(len(x), k, replace=False)
+    # Escolhendo aleatoriamente os centróides
+    centroids = x[idx, :]  # Passo 1
+     
+    for _ in range(no_of_iterations): 
+        distances = cdist(x, centroids, 'euclidean')
+        points = np.array([np.argmin(i) for i in distances])
+        
+        centroids = []
+        for i in range(k):
+            # Atualizando os centróides calculando a média dos pontos no cluster
+            temp_cent = x[points == i].mean(axis=0) 
+            centroids.append(temp_cent)
+ 
+        centroids = np.vstack(centroids)  # Centrólides atualizados
+         
+    return points
+
+def show_digitsdataset(digits):
+    fig = plt.figure(figsize=(6, 6))  # tamanho da figura em polegadas
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1, hspace=0.05, wspace=0.05)
+
+    for i in range(64):
+        ax = fig.add_subplot(8, 8, i + 1, xticks=[], yticks=[])
+        ax.imshow(digits.images[i], cmap=plt.cm.binary, interpolation='nearest')
+        ax.text(0, 7, str(digits.target[i]))
+
+def plot_samples(projected, labels, title, cmap='tab10'):    
+    plt.figure(figsize=(8, 6))
+    u_labels = np.unique(labels)
+    colors = plt.cm.get_cmap(cmap, len(u_labels))
+    
+    for i in u_labels:
+        plt.scatter(projected[labels == i, 0], projected[labels == i, 1],
+                    label=f'Cluster {i}', edgecolor='none', alpha=0.5, cmap=colors)
+    
+    plt.xlabel('Componente 1')
+    plt.ylabel('Componente 2')
+    plt.legend()
+    plt.title(title)
+    plt.grid(True)
+
+def elbow_method(X, max_k):
+    """
+    Calcula a inércia para diferentes valores de k e plota o gráfico do cotovelo.
+    """
+    distortions = []
+    K = range(1, max_k + 1)
+    for k in K:
+        kmeans = KMeans(n_clusters=k, random_state=0)
+        kmeans.fit(X)
+        distortions.append(kmeans.inertia_)
+    
+    plt.figure(figsize=(8, 6))
+    plt.plot(K, distortions, marker = 'o')
+    plt.xlabel('Número de Clusters')
+    plt.ylabel('Inércia')
+    plt.title('Método do Cotovelo para KMeans')
+    plt.grid(True)
+    plt.show()
 
 def main():
-
-    names = ['Idade', 'Sexo', 'TipoDorPeito','PressaoArterialRepouso', 'Colesterol', 'Glicemia', 'ResEletroCardio', 'FreqCardioMax', 'AnginaInduzExerc', 'PicoAnterior', 'Declive', 'VasosPrincAfetados', 'TesteEstresse', 'Resultado']
-    features = ['Idade', 'Sexo', 'TipoDorPeito','PressaoArterialRepouso', 'Colesterol', 'Glicemia', 'ResEletroCardio', 'FreqCardioMax', 'AnginaInduzExerc', 'PicoAnterior', 'Declive', 'VasosPrincAfetados', 'TesteEstresse']
-    
-    target = 'Resultado'
-    
+    # Carregar dataset
     input_file = '0-Datasets/HeartAttackModa.csv'
-
-    df = pd.read_csv(input_file, names=names, usecols = ['PressaoArterialRepouso', 'FreqCardioMax', 'Resultado'])
-    print(df.head())
-
-    x = df.loc[:, features].values
-
-    # Standardizing the features
-    x = StandardScaler().fit_transform(x)
-    normalizedDf = pd.DataFrame(data = x, columns = features)
-    normalizedDf = pd.concat([normalizedDf, df[[target]]], axis = 1)
-
-    # # PCA projection
-    # pca = PCA()    
-    # principalComponents = pca.fit_transform(x)
-    # print("Explained variance per component:")
-    # print(pca.explained_variance_ratio_.tolist())
-
-    # principalDf = pd.DataFrame(data = principalComponents[:,0:2], 
-    #                            columns = ['principal component 1', 
-    #                                       'principal component 2'
-    #                                       ])
-
-    #sns.scatterplot(data = df, x = 'PressaoArterialRepouso', y = 'FreqCardioMax', hue = 'Resultado')
+    names = ['Idade', 'Sexo', 'TipoDorPeito', 'PressaoArterialRepouso', 'Colesterol', 'Glicemia', 
+             'ResEletroCardio', 'FreqCardioMax', 'AnginaInduzExerc', 'PicoAnterior', 'Declive', 
+             'VasosPrincAfetados', 'TesteEstresse', 'Resultado']
+    df = pd.read_csv(input_file, names=names)
+    target_col = 'Resultado'
     
-
-    X_train, X_test, y_train, y_test = train_test_split(df[['PressaoArterialRepouso', 'FreqCardioMax']], df[['Resultado']], test_size=0.33, random_state=0)
-    X_train_norm = preprocessing.normalize(X_train)
-    X_test_norm = preprocessing.normalize(X_test)
-
-    kmeans = KMeans(n_clusters = 2, random_state = 0, n_init='auto')
-    kmeans.fit(X_train_norm)
-
-    sns.scatterplot(data = X_train, x = 'PressaoArterialRepouso', y = 'FreqCardioMax', hue = kmeans.labels_)
-    plt.show();
-    # #sns.boxplot(x = kmeans.labels_, y = y_train['Resultado'], palette="Set1")
+    # Preparar os dados
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
     
-    # #plt.show()
-
-    # #print(silhouette_score(X_train_norm, kmeans.labels_, metric='euclidean'))
-
-    # K = range(2, 8)
-    # fits = []
-    # score = []
-
-
-    # for k in K:
-    #     # train the model for current value of k on training data
-    #     model = KMeans(n_clusters = k, random_state = 0, n_init='auto').fit(X_train_norm)
-        
-    #     # append the model to fits
-    #     fits.append(model)
-        
-    #     # Append the silhouette score to scores
-    #     score.append(silhouette_score(X_train_norm, model.labels_, metric='euclidean'))
-
-    # #sns.scatterplot(data = X_train, x = 'PressaoArterialRepouso', y = 'FreqCardioMax', hue = fits[0].labels_)
+    # Escalar os dados
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
     
+    # Transformar os dados usando PCA
+    pca = PCA(2)
+    projected = pca.fit_transform(X_scaled)
+    
+    # Visualizar o dataset original
+    plt.figure(figsize=(8, 6))
+    plt.scatter(projected[:, 0], projected[:, 1], c=y, cmap=plt.cm.get_cmap('tab10', len(np.unique(y))), alpha=0.5)
+    plt.title('Labels Originais')
+    plt.xlabel('Componente 1')
+    plt.ylabel('Componente 2')
+    plt.colorbar(label='Classe')
+    plt.grid(True)
+    
+    # Aplicar o método do cotovelo para encontrar o número ideal de clusters
+    elbow_method(projected, max_k=10)
+    
+    # Aplicar o KMeans do zero
+    k = 6
+    labels_scratch = KMeans_scratch(projected, k, 5)
+    
+    # Visualizar os resultados do KMeans do zero
+    plot_samples(projected, labels_scratch, 'Labels dos Clusters KMeans do Zero')
 
-    # sns.boxplot(x = fits[3].labels_, y = y_train['Resultado'])
-    # plt.show()  
+    # Aplicar o KMeans do sklearn
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(projected)
+    print("Inércia do sklearn KMeans:", kmeans.inertia_)
+    score = silhouette_score(projected, kmeans.labels_)    
+    print(f"Para n_clusters = {k}, o índice de silhueta é {score:.2f}")
+
+    # Visualizar os resultados do KMeans do sklearn
+    plot_samples(projected, kmeans.labels_, 'Labels dos Clusters KMeans do sklearn')
+
+    plt.show()
 
 if __name__ == "__main__":
     main()
