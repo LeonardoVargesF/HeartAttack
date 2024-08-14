@@ -1,23 +1,13 @@
-# Initial imports
 import itertools
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import f1_score
-from sklearn.metrics import confusion_matrix
-from sklearn import datasets
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 from sklearn.svm import SVC
-from sklearn.model_selection import GridSearchCV
-from IPython.display import display
 
-
-def plot_confusion_matrix(cm, classes,
-                          normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -49,65 +39,63 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')    
 
-
-
-
 def main():
+    # Load dataset
     input_file = '0-Datasets/HeartAttackMedia.csv'
     names = ['Idade', 'Sexo', 'TipoDorPeito','PressaoArterialRepouso', 'Colesterol', 'Glicemia', 'ResEletroCardio', 'FreqCardioMax', 'AnginaInduzExerc', 'PicoAnterior', 'Declive', 'VasosPrincAfetados', 'TesteEstresse', 'Resultado']
     target = 'Resultado'
     df = pd.read_csv(input_file, names=names)
-    df['target'] = target
     
-    # Separate X and y data
+    # Separate features (X) and target (y)
     X = df[names]
-    y = df[target]   
+    y = df[target]
     print("Total samples: {}".format(X.shape[0]))
 
     # Split the data - 75% train, 25% test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=1)
     print("Total train samples: {}".format(X_train.shape[0]))
-    print("Total test  samples: {}".format(X_test.shape[0]))
+    print("Total test samples: {}".format(X_test.shape[0]))
 
-    # Scale the X data using Z-score
+    # Scale the data using Z-score normalization
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    # Grid Search for SVM
-    parameters = {'kernel':('linear', 'rbf', 'poly'), 'C':[1, 10]}
+    # Define the parameter grid for GridSearchCV
+    param_grid = {
+        'kernel': ['linear', 'rbf', 'poly'],
+        'C': [1, 10]
+    }
+
+    # Create the SVM model and use GridSearchCV for cross-validation
     svm = SVC()
-    clf = GridSearchCV(svm, parameters, cv=5)  # 5-fold cross-validation
+    grid_search = GridSearchCV(svm, param_grid, cv=5, scoring='accuracy', return_train_score=True)
 
-    # Training using train dataset
-    clf.fit(X_train, y_train).best_score_
-    results = pd.DataFrame(clf.cv_results_)[['param_kernel', 'split0_test_score', 'split1_test_score']]
-    display(results)
-    # Display all GridSearchCV results
-    
+    # Fit the model on the training data
+    grid_search.fit(X_train, y_train)
 
+    # Get the best model and predict on test data
+    best_model = grid_search.best_estimator_
+    y_hat_test = best_model.predict(X_test)
 
-    
-    # Predict using test dataset
-    y_hat_test = clf.predict(X_test)
-
-    # Get test accuracy score
+    # Evaluate the performance
     accuracy = accuracy_score(y_test, y_hat_test) * 100
     f1 = f1_score(y_test, y_hat_test, average='macro')
-    print("Accuracy SVM from sk-learn: {:.2f}%".format(accuracy))
-    print("F1 Score SVM from sk-learn: {:.2f}".format(f1))
+    print("Best Parameters found: ", grid_search.best_params_)
+    print("Accuracy: {:.2f}%".format(accuracy))
+    print("F1 Score: {:.2f}".format(f1))
 
-    # Get test confusion matrix    
-    cm = confusion_matrix(y_test, y_hat_test)    
-    classes = np.unique(y)    
-    plot_confusion_matrix(cm, classes, False, "Confusion Matrix - SVM sklearn")      
-    plot_confusion_matrix(cm, classes, True, "Confusion Matrix - SVM sklearn normalized" )  
+    # Confusion matrix
+    cm = confusion_matrix(y_test, y_hat_test)
+    classes = np.unique(y)
+    plot_confusion_matrix(cm, classes, False, "Confusion Matrix - SVM")
+    plot_confusion_matrix(cm, classes, True, "Normalized Confusion Matrix - SVM")
     plt.show()
-    print(sorted(clf.cv_results_.keys()))
 
-    # Cross-validation scores
-    cv_scores = cross_val_score(clf, X, y, cv=5)  # 5-fold cross-validation
-    print(f'Cross-validation scores: {cv_scores}')
-    print(f'Mean cross-validation score: {cv_scores.mean():.2f}')
+    # Display all GridSearchCV results
+    results = pd.DataFrame(grid_search.cv_results_)
+    print("\nAll cross-validation results:")
+    print(results[['params', 'mean_test_score', 'std_test_score', 'mean_train_score', 'std_train_score']])
+
 if __name__ == "__main__":
     main()
