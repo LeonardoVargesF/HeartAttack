@@ -52,7 +52,7 @@ def main():
     print("Total samples: {}".format(X.shape[0]))
 
     # Split the data - 75% train, 25% test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=1)
     print("Total train samples: {}".format(X_train.shape[0]))
     print("Total test samples: {}".format(X_test.shape[0]))
 
@@ -69,7 +69,7 @@ def main():
 
     # Create the SVM model and use GridSearchCV for cross-validation
     svm = SVC()
-    grid_search = GridSearchCV(svm, param_grid, cv=5, scoring='accuracy', return_train_score=True)
+    grid_search = GridSearchCV(svm, param_grid, cv=10, scoring='accuracy', return_train_score=True)
 
     # Fit the model on the training data
     grid_search.fit(X_train, y_train)

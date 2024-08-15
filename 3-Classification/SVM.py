@@ -80,7 +80,7 @@ def main():
 
 
     # Split the data - 75% train, 25% test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
     print("Total train samples: {}".format(X_train.shape[0]))
     print("Total test  samples: {}".format(X_test.shape[0]))
 
@@ -108,10 +108,10 @@ def main():
 
     # TESTS USING SVM classifier from sk-learn
     parameters = {'kernel':('linear', 'rbf', 'poly'), 'C':[1, 10]}
-    svm = SVC() # poly, rbf, linear
+
     clf = GridSearchCV(svm, parameters)   
     # training using train dataset
-    clf.fit(X_train, y_train)
+    svm.fit(X_train, y_train)
     # get support vectors
     #print(svm.support_vectors_)
     # get indices of support vectors
@@ -120,7 +120,7 @@ def main():
     # print("Qtd Support vectors: ")
     # print(svm.n_support_)
     # # predict using test dataset
-    y_hat_test = clf.predict(X_test)
+    y_hat_test = svm.predict(X_test)
     
     #https://andersonuyekita.github.io/notebooks/blog/2019/03/21/como-usar-o-gridsearchcv/
 

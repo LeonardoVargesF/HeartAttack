@@ -103,12 +103,11 @@ def main():
     # Separate X and y data
     X = df.drop('target', axis=1)
     y = df['target']   
-    print("Total samples: {}".format(X.shape[0]))
+    
 
     # Split the data - 75% train, 25% test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=1)
-    print("Total train samples: {}".format(X_train.shape[0]))
-    print("Total test  samples: {}".format(X_test.shape[0]))
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=1)
+    
 
     # Scale the X data using Z-score
     scaler = StandardScaler()
@@ -130,22 +129,27 @@ def main():
     plot_confusion_matrix(cm, np.unique(y), False, "Confusion Matrix - K-NN from scratch")      
     plot_confusion_matrix(cm, np.unique(y), True, "Confusion Matrix - K-NN from scratch normalized")  
 
+    
+
     # STEP 2 - TESTS USING knn classifier from sk-learn
-    knn = KNeighborsClassifier(n_neighbors=5)
+    knn = KNeighborsClassifier(n_neighbors=14)
+    scores = cross_val_score(knn, X, y, cv=10)
     knn.fit(X_train, y_train)
     y_hat_test = knn.predict(X_test)
 
-    clf = svm.SVC(kernel='linear', C=1, random_state=42)
-    scores = cross_val_score(clf, X, y, cv=5)
-
-    print("Cross-validation scores:", scores)
-    print("Mean cross-validation score: {:.2f}".format(scores.mean()))
+    
+    
 
     # Get test accuracy score
     accuracy = accuracy_score(y_test, y_hat_test)*100
     f1 = f1_score(y_test, y_hat_test,average='macro')
+    print("Total samples: {}".format(X.shape[0]))
+    print("Total train samples: {}".format(X_train.shape[0]))
+    print("Total test  samples: {}".format(X_test.shape[0]))
     print("Accuracy K-NN from sk-learn: {:.2f}%".format(accuracy))
     print("F1 Score K-NN from sk-learn: {:.2f}%".format(f1))
+    print(f"Cross-validation scores: {[f'{score:.2f}' for score in scores]}")
+    print("Mean cross-validation score: {:.2f}".format(scores.mean()))
 
     # Get test confusion matrix    
     cm = confusion_matrix(y_test, y_hat_test)        

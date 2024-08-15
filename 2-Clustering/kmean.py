@@ -104,7 +104,7 @@ def main():
     elbow_method(projected, max_k=20)
     
     # Aplicar o KMeans do zero
-    k = 5
+    k = 15
     labels_scratch = KMeans_scratch(projected, k, 5)
     
     # Visualizar os resultados do KMeans do zero
